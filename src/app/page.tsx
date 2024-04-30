@@ -1,113 +1,222 @@
+'use client'
+import Confetti from "react-confetti";
+import { useState, useEffect, useRef } from "react";
+import TimerComponent from "./components/TimerComponent";
 import Image from "next/image";
+import Footer from "./components/Footer";
+import Nav from "./components/Nav";
 
-export default function Home() {
+export default function App() {
+  const [startTimer, setStartTimer] = useState<boolean>(false);
+  const [endTimer, setEndTimer] = useState<boolean>(false);
+  const [minutes, setMinutes] = useState<number>(0);
+  const [seconds, setSeconds] = useState<number>(0);
+  const [winner, setWinner] = useState<boolean>(false);
+  const imagesArray = [
+    "apple",
+    "banana",
+    "mango",
+    "kiwi",
+    "strawberry",
+    "watermelon",
+    "peach",
+    "pomegranate"
+  ];
+  const [name, setName] = useState<string>("");
+  const [show, setShow] = useState<boolean>(false);
+  const [height, setHeight] = useState<number>(0);
+  const [width, setWidth] = useState<number>(0);
+  let flipArray = [1, 0, 4, 6, 5, 3, 7, 2, 4, 6, 7, 3, 2, 1, 0, 5];
+  const MAX_INDEX = 16;
+  const ref = useRef<HTMLDivElement[]>([]);
+  const [numbers, setNumber] = useState<number[]>([]);
+  const [display, setDisplay] = useState<boolean[]>(Array.from({ length: 16 }).fill(false) as boolean[]);
+  const [turn, setTurn] = useState("1");
+  const [indexes, setIndexes] = useState({ prev: -1, current: -1 });
+  const showValue = (index: number) => {
+    const newDisplay = [...display];
+    newDisplay[index] = true;
+    setDisplay(newDisplay);
+  };
+  const hideValue = (prev: number, index: number) => {
+    const newDisplay = [...display];
+    newDisplay[index] = false;
+    newDisplay[prev] = false;
+    setDisplay(newDisplay);
+  };
+  const checkValuesAreTrue = (prevIndex: number, currentIndex: number) => {
+    const prevElement = ref.current[prevIndex];
+    const currentElement = ref.current[currentIndex];
+    if (!prevElement || !currentElement) {
+      return false;
+    }
+    const previousValue = parseInt(
+      prevElement.querySelector("h1")?.innerHTML || '0'
+    );
+    const currentValue = parseInt(
+      currentElement.querySelector("h1")?.innerHTML || '0'
+    );
+    return previousValue === currentValue;
+  };
+
+  const handleDisplay = (index: number) => {
+    showValue(index);
+    if (turn === "1") {
+      setIndexes((ind) => ({ ...ind, prev: index }));
+      setTurn("2");
+    } else if (turn === "2") {
+      setIndexes((ind) => ({ ...ind, current: index }));
+      const check = checkValuesAreTrue(indexes.prev, index);
+      if (check) {
+        console.log("previous numbers are same");
+      } else {
+        setTimeout(() => {
+          hideValue(indexes.prev, index);
+        }, 200);
+      }
+      setIndexes({ prev: -1, current: -1 });
+      setTurn("1");
+    }
+  };
+  const getNumbers = () => {
+    for (let i = 0; i < flipArray.length; i++) {
+      const index1 = Math.floor(Math.random() * MAX_INDEX);
+      const index2 = Math.floor(Math.random() * MAX_INDEX);
+      const temp = flipArray[index2];
+      flipArray[index2] = flipArray[index1];
+      flipArray[index1] = temp;
+    }
+    return flipArray;
+  };
+  const updateScores = async (score: number) => {
+    const name = localStorage.getItem('name');
+    const response = await fetch(`/api/scores`, {
+      method: 'POST',
+      body: JSON.stringify({ name: name, scores: score }),
+    })
+    const data = await response.json();
+    console.log(data)
+  }
+  const getWinner = () => {
+    const check = display.every((value) => value === true);
+    if (check) {
+      console.log(`${minutes}:${seconds}`);
+      const score: number = minutes * 60 + seconds;
+      console.log(score);
+      updateScores(score);
+      setWinner(true);
+      setEndTimer(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 10000);
+      const newDisplay = Array.from({ length: 16 }).fill(false) as boolean[];
+      setDisplay(newDisplay);
+    }
+    return check;
+  };
+  const handleModal = () => {
+    localStorage.setItem("name", name);
+    setStartTimer(true);
+    setShow(false);
+  };
+
+  useEffect(() => {
+    getNumbers();
+  }, []);
+  useEffect(() => {
+    setNumber(flipArray);
+    setHeight(window.innerHeight)
+    setWidth(window.innerWidth)
+    if (localStorage.getItem("name") !== null) {
+      setStartTimer(true);
+    }
+    if (localStorage.getItem("name") === null) {
+      setShow(true);
+    }
+  }, []);
+  getWinner();
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="App">
+      <Nav />
+      <TimerComponent
+        minutes={minutes}
+        setMinutes={setMinutes}
+        seconds={seconds}
+        setSeconds={setSeconds}
+        start={startTimer}
+        end={endTimer}
+      />
+      <div className="box p-4">
+        {numbers.length === MAX_INDEX &&
+          numbers.map((flip, index) => (
+            <div
+              ref={(e) => {
+                if (e !== null && ref.current !== null)
+                  ref.current[index] = e;
+              }}
+              onClick={() => handleDisplay(index)}
+              key={index}
+              className="flip-box"
+            >
+              <Image
+                className={`${display[index] ? `block` : `hidden`} h-[50px] w-[50px]`}
+                src={`/${imagesArray[flip]}.png`}
+                alt={imagesArray[flip]}
+                height={500}
+                width={500}
+              />
+              <h1 style={{ display: "none" }}>{flip}</h1>
+            </div>
+          ))}
+      </div>
+      <div
+        style={{ display: show ? "inline-flex" : "none" }}
+        className="modal flex justify-center absolute p-2 sm:px-6 w-full"
+      >
+        <div className="modal-container border relative border-gray-600 bg-[#242424] flex h-[20rem] w-full sm:w-[25rem] rounded-xl">
+          <div
+            className="absolute top-0 right-4 cursor-pointer"
+            onClick={() => setShow(false)}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            <h1 className="text-white text-2xl">×</h1>
+          </div>
+          <div className="w-full flex flex-col justify-center p-4 items-center text-white space-y-4">
+            <h1 className="text-lg text-left">Enter your name</h1>
+            <div className="flex w-full">
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-[#363636] w-full outline-none p-2 rounded-md"
+              />
+            </div>
+            <div className="w-full">
+              <button
+                onClick={handleModal}
+                className="p-2 bg-[#363636] uppercase tracking-wider border border-[#363636] hover:border-indigo-500 w-full rounded-md"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      {winner === true ? (
+        <h1 style={{ color: "white" }}>Yayyy! We solved this!</h1>
+      ) : (
+        <div className="p-10">
+          {turn === "1" && (
+            <h1 className="capitalize">Chose first symbol</h1>
+          )}
+          {turn === "2" && (
+            <h1 className="capitalize">Chose second symbol</h1>
+          )}
+        </div>
+      )}
+      {winner && <Confetti width={width} height={height} />}
+      <Footer />
+    </div>
   );
 }

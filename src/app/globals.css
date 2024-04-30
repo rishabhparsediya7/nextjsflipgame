@@ -30,4 +30,40 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  body {
+    background-color: rgb(27, 26, 26);
+  }
+  .App {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  .box {
+    width: 100%;
+    max-width: 200px;
+    display: grid;
+    justify-content: center;
+    grid-template-rows: repeat(4, 80px);
+    grid-template-columns: repeat(4, 80px);
+    gap: 10px;
+  }
+  .flip-box {
+    background-color: #252525;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .flip-box:hover {
+    border: 1px solid rgb(114, 114, 241);
+    border-radius: 10px;
+  }
+  .flip-box h1 {
+    display: none;
+  }
 }
