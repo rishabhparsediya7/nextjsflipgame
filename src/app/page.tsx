@@ -176,7 +176,7 @@ export default function App() {
         <div className="modal-container border relative border-gray-600 bg-[#242424] flex h-[20rem] w-full sm:w-[25rem] rounded-xl">
           <div
             className="absolute top-0 right-4 cursor-pointer"
-            onClick={() => setShow(false)}
+            // onClick={() => setShow(false)}
           >
             <h1 className="text-white text-2xl">×</h1>
           </div>
