@@ -3,7 +3,7 @@ export default function Footer() {
         <footer
             className="text-center bg-neutral-600 text-neutral-200 lg:text-left w-full">
             <div
-                className="flex items-center justify-center border border-neutral-200 p-6 dark:border-neutral-500 lg:justify-between">
+                className="flex items-center justify-center border-b border-neutral-200 p-6 dark:border-neutral-500 lg:justify-between">
                 <div className="mr-12 hidden lg:block">
                     <span>Get connected with me on social networks:</span>
                 </div>
